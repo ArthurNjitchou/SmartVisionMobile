@@ -16,6 +16,13 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
+   **Backend local** : sur téléphone physique (Expo Go), l’app utilise automatiquement l’IP affichée par Metro (ex. `192.168.x.x:3000`). Vérifiez que le backend écoute sur `0.0.0.0:3000` et que le PC et le téléphone sont sur le même Wi‑Fi.
+
+   Pour forcer une URL : créez `.env` avec `EXPO_PUBLIC_API_URL=http://192.168.x.x:3000` puis relancez Expo.
+
+3. Si vous voyez des erreurs 403 après une mise à jour, **déconnectez-vous et reconnectez-vous** (ancien jeton invalide).
+   
+
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)
