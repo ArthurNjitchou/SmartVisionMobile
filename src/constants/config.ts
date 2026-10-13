@@ -18,8 +18,10 @@ export const PRIVACY_POLICY_URL = 'https://www.smartvision.education/privacy';
 export const ACCOUNT_DELETION_URL = 'https://www.smartvision.education/suppression-compte';
 /** Adresse de contact SmartVision (demandes de suppression de compte, support). */
 export const CONTACT_EMAIL = 'contact@smartvision.education';
+/** Affiché sur l'écran de connexion quand le jeton de session a expiré ou a été refusé. */
+export const SESSION_EXPIRED_MESSAGE = 'Votre session a expiré. Veuillez vous reconnecter.';
 /** Affiché sur l'écran de connexion quand un administrateur a désactivé le compte. */
-export const ACCOUNT_DISABLED_MESSAGE = `Votre compte a été désactivé. Pour toute question, contactez ${CONTACT_EMAIL}.`;
+export const ACCOUNT_DISABLED_MESSAGE = `Votre compte a été supprimé. Pour toute question, contactez ${CONTACT_EMAIL}.`;
 /** Port d’écoute de ton API locale (adapter si ton backend n’écoute pas sur 3000). */
 const DEV_BACKEND_PORT = 3000;
 
@@ -145,9 +147,23 @@ export const API_ENDPOINTS = {
 } as const;
 
 export const STORAGE_KEYS = {
+  /** Ancien emplacement du token (AsyncStorage, en clair) : lu une fois pour migration, puis effacé. */
   AUTH_TOKEN: '@auth_token',
   USER_DATA: '@user_data',
 } as const;
+
+/**
+ * Clé du token dans expo-secure-store (chiffré). SecureStore n'accepte que
+ * [A-Za-z0-9._-] dans les clés : d'où une clé distincte de `@auth_token`.
+ */
+export const SECURE_TOKEN_KEY = 'smartvision_auth_token';
+
+/** Rôles qui ont un espace dans l'application mobile. */
+export const MOBILE_ROLES = ['parent', 'teacher'] as const;
+
+/** Affiché quand un compte valide n'a pas d'espace mobile (admin, élève, etc.). */
+export const UNSUPPORTED_ROLE_MESSAGE =
+  'Cette application est réservée aux parents et aux enseignants. Les autres comptes se connectent sur le site web SmartVision.';
 
 /** Couleurs principales SmartVision (UI + splash) */
 export const BRAND = {

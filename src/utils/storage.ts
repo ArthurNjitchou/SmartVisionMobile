@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import { STORAGE_KEYS } from '../constants/config';
+import { SECURE_TOKEN_KEY, STORAGE_KEYS } from '../constants/config';
 import { User } from '../types/user.types';
 
 /** Normalise un jeton lu depuis le stockage (legacy JSON ou chaîne brute). */
@@ -55,12 +56,49 @@ export const storage = {
   },
 };
 
+/**
+ * Le token de session est stocké chiffré via expo-secure-store :
+ * - Android : chiffré par une clé de l'Android Keystore (non exportable de l'appareil) ;
+ * - iOS : Keychain.
+ * Sur le web, SecureStore n'existe pas : on garde AsyncStorage (localStorage).
+ *
+ * Le token est aussi gardé en mémoire pour éviter un accès au Keystore à chaque requête.
+ */
+const useSecureStore = Platform.OS !== 'web';
+let cachedToken: string | null | undefined;
+
+async function readLegacyToken(): Promise<string | null> {
+  return normalizeStoredToken(await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN));
+}
+
+async function readSecureToken(): Promise<string | null> {
+  try {
+    const secure = normalizeStoredToken(await SecureStore.getItemAsync(SECURE_TOKEN_KEY));
+    if (secure) return secure;
+  } catch (error) {
+    // Clé du Keystore devenue illisible (ex. restauration sur un autre appareil) :
+    // on efface l'entrée, l'utilisateur devra se reconnecter.
+    console.error('Error reading secure auth token:', error);
+    await SecureStore.deleteItemAsync(SECURE_TOKEN_KEY).catch(() => undefined);
+    return null;
+  }
+
+  // Migration : une version précédente stockait le token en clair dans AsyncStorage.
+  const legacy = await readLegacyToken();
+  if (legacy) {
+    await SecureStore.setItemAsync(SECURE_TOKEN_KEY, legacy);
+    await AsyncStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+  }
+  return legacy;
+}
+
 // Helpers spécifiques pour l'authentification
 export const authStorage = {
   async getToken(): Promise<string | null> {
+    if (cachedToken !== undefined) return cachedToken;
     try {
-      const raw = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-      return normalizeStoredToken(raw);
+      cachedToken = useSecureStore ? await readSecureToken() : await readLegacyToken();
+      return cachedToken;
     } catch (error) {
       console.error('Error getting auth token:', error);
       return null;
@@ -70,11 +108,23 @@ export const authStorage = {
   async setToken(token: string): Promise<void> {
     const normalized = normalizeStoredToken(token);
     if (!normalized) return;
-    await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, normalized);
+    if (useSecureStore) {
+      await SecureStore.setItemAsync(SECURE_TOKEN_KEY, normalized);
+    } else {
+      await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, normalized);
+    }
+    cachedToken = normalized;
   },
 
   async removeToken(): Promise<void> {
-    return storage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    cachedToken = null;
+    if (useSecureStore) {
+      await SecureStore.deleteItemAsync(SECURE_TOKEN_KEY).catch((error) =>
+        console.error('Error removing secure auth token:', error)
+      );
+    }
+    // Toujours effacer aussi l'ancien emplacement en clair.
+    await storage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
   },
 
   async getUserData(): Promise<User | null> {
@@ -87,7 +137,7 @@ export const authStorage = {
 
   async clearAuth(): Promise<void> {
     await Promise.all([
-      storage.removeItem(STORAGE_KEYS.AUTH_TOKEN),
+      authStorage.removeToken(),
       storage.removeItem(STORAGE_KEYS.USER_DATA),
     ]);
   },
@@ -129,6 +179,8 @@ export async function clearSessionStorageForLogout(): Promise<void> {
         /* ignore */
       }
     }
+    // Vide aussi le cache mémoire du token.
+    await authStorage.removeToken();
     try {
       await AsyncStorage.clear();
     } catch (e) {

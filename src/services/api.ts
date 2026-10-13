@@ -1,6 +1,7 @@
-import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosInstance, CanceledError, InternalAxiosRequestConfig } from 'axios';
 import { router } from 'expo-router';
-import { ACCOUNT_DISABLED_MESSAGE, getBaseURL } from '../constants/config';
+import { ACCOUNT_DISABLED_MESSAGE, getBaseURL, SESSION_EXPIRED_MESSAGE } from '../constants/config';
+import { isJwtExpired } from '../utils/jwt';
 import { authStorage } from '../utils/storage';
 
 /**
@@ -32,11 +33,29 @@ function isAccountDisabled(data: unknown): boolean {
   return (data as { code?: string } | undefined)?.code === 'ACCOUNT_DISABLED';
 }
 
-async function invalidateSessionAndGoToLogin(message?: string): Promise<void> {
-  const { useAuthStore } = await import('../stores/authStore');
-  await useAuthStore.getState().logout(message);
-  router.replace('/(auth)/login' as never);
+let sessionEnding = false;
+
+/**
+ * Déconnexion + retour au login. Plusieurs écrans lancent leurs requêtes en même temps :
+ * seule la première requête refusée déclenche la déconnexion, les autres sont ignorées.
+ */
+async function invalidateSessionAndGoToLogin(message: string): Promise<void> {
+  if (sessionEnding) return;
+  sessionEnding = true;
+  try {
+    const { useAuthStore } = await import('../stores/authStore');
+    await useAuthStore.getState().logout(message);
+    router.replace('/(auth)/login' as never);
+  } finally {
+    sessionEnding = false;
+  }
 }
+
+/** Erreur d'une requête annulée parce que la session est terminée : inutile de l'afficher. */
+export function isSessionEndedError(error: unknown): boolean {
+  return error instanceof CanceledError && error.message === SESSION_ENDED;
+}
+const SESSION_ENDED = 'SESSION_ENDED';
 
 const api: AxiosInstance = axios.create({
   baseURL: getBaseURL(),
@@ -52,6 +71,11 @@ api.interceptors.request.use(
 
     const token = await authStorage.getToken();
     if (token) {
+      // Jeton expiré (date `exp` du JWT) : on ne l'envoie pas, le serveur le refuserait.
+      if (isJwtExpired(token)) {
+        await invalidateSessionAndGoToLogin(SESSION_EXPIRED_MESSAGE);
+        throw new CanceledError(SESSION_ENDED);
+      }
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -74,8 +98,11 @@ api.interceptors.response.use(
       isAuthFailure(status, error.response?.data) &&
       !isBusinessForbidden
     ) {
+      if (__DEV__) {
+        console.warn('[api] session refusée', status, url, error.response?.data);
+      }
       await invalidateSessionAndGoToLogin(
-        isAccountDisabled(error.response?.data) ? ACCOUNT_DISABLED_MESSAGE : undefined
+        isAccountDisabled(error.response?.data) ? ACCOUNT_DISABLED_MESSAGE : SESSION_EXPIRED_MESSAGE
       );
     }
     return Promise.reject(error);

@@ -34,6 +34,9 @@ export default function Index() {
           router.replace('/(app)/(teacher)' as any);
         } else if (user.role === 'parent') {
           router.replace('/(app)/(parent)' as any);
+        } else {
+          // Rôle sans espace mobile : le store a déjà refusé la session, on reste sur le login.
+          router.replace('/(auth)/login' as any);
         }
       } else {
         router.replace('/(auth)/login' as any);

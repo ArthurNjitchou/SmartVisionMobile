@@ -32,6 +32,8 @@ module.exports = {
     },
     plugins: [
       'expo-router',
+      // Token de session chiffré (Android Keystore / iOS Keychain), exclu des sauvegardes Android.
+      'expo-secure-store',
       [
         'expo-build-properties',
         {

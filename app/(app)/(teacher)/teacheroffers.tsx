@@ -292,7 +292,7 @@ export default function TeacherOffersScreen() {
                 nestedScrollEnabled
               >
                 <View style={styles.modalHeader}>
-                  <Text style={styles.detailTitle}>Details de l'offre</Text>
+                  <Text style={styles.detailTitle}>Details de l&apos;offre</Text>
                   <TouchableOpacity onPress={() => setSelectedOffer(null)} style={styles.closeBtn}>
                     <Ionicons name="close" size={20} color="#374151" />
                   </TouchableOpacity>

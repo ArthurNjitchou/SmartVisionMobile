@@ -85,7 +85,7 @@ export default function TeacherPaymentsScreen() {
     setLoading(true);
     setErrorMessage('');
     const clean = Object.fromEntries(
-      Object.entries(filters).filter(([, value]) => value !== undefined && value !== '')
+      Object.entries(filters).filter(([, value]) => value !== undefined)
     );
     try {
       if (tab === 'invoices') {

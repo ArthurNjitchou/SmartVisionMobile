@@ -221,9 +221,9 @@ Tout est dans Play Console → votre app → **Policy and programs → App conte
 
 | Compte | Pourquoi |
 |---|---|
-| `demo.parent@…` | Compte principal de revue |
-| `demo.parent2@…` | Secours : si le mot de passe du premier est changé ou le compte bloqué pendant une revue |
-| `demo.enseignant@…` | Si l'espace enseignant est utilisé, Google doit pouvoir le voir aussi |
+| `demo.parent@smartvision.education` | Compte principal de revue |
+| `demo.parent2@smartvision.education` | Secours : si le mot de passe du premier est changé ou le compte bloqué pendant une revue |
+| `demo.enseignant@smartvision.education` | Si l'espace enseignant est utilisé, Google doit pouvoir le voir aussi |
 
 Pour chaque compte :
 1. Le créer depuis l'admin comme un vrai client, idéalement dans une **agence de test** (pour ne pas mélanger avec les vraies données).
@@ -252,7 +252,7 @@ L'écran de connexion mobile a un lien **« Mot de passe oublié ? »** : il env
 
 #### Suppression de compte et comptes créés par l'organisation
 
-La règle Google sur la suppression de compte vise les apps qui permettent de **créer** un compte depuis l'app. Ce n'est pas notre cas : les comptes sont créés par l'administration. **Décision : pas de bouton de suppression dans l'app mobile** (il a été retiré), pour ne pas effacer factures et paiements d'un parent sous contrat. La suppression se fait sur demande à contact@smartvision.education : l'équipe **désactive** le compte depuis le tableau admin (bouton « Désactiver »). L'utilisateur est déconnecté immédiatement (web et mobile, via Socket.IO) et ne peut plus se reconnecter ; ses données sont **archivées, pas effacées**. Page publique pour la Play Console : `https://www.smartvision.education/suppression-compte`. Dans Play Console → **App content → Account deletion**, indiquer que l'app ne permet pas de créer de compte. La politique de confidentialité doit tout de même expliquer comment demander la suppression (email de contact).
+La règle Google sur la suppression de compte vise les apps qui permettent de **créer** un compte depuis l'app. Ce n'est pas notre cas : les comptes sont créés par l'administration. **Décision : pas de bouton de suppression dans l'app mobile** (il a été retiré), pour ne pas effacer factures et paiements d'un parent sous contrat. La suppression se fait sur demande à contact@smartvision.education : l'équipe **désactive** le compte depuis le tableau admin (bouton « Désactiver »). L'utilisateur est déconnecté immédiatement (web et mobile, via Socket.IO) et ne peut plus se reconnecter. Le super admin peut aussi **supprimer définitivement** le compte depuis son tableau (bouton « Supprimer »). Page publique pour la Play Console : `https://www.smartvision.education/suppression-compte`. Dans Play Console → **App content → Account deletion**, indiquer que l'app ne permet pas de créer de compte. La politique de confidentialité doit tout de même expliquer comment demander la suppression (email de contact).
 
 #### Closed testing (§10)
 

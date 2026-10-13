@@ -189,7 +189,7 @@ export default function TeacherHelpScreen() {
               disabled={agencies.length === 0}
             >
               <Ionicons name="business-outline" size={16} color="#FFF" />
-              <Text style={styles.headerPrimaryText}>Contacter l'agence</Text>
+              <Text style={styles.headerPrimaryText}>Contacter l&apos;agence</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.headerBtn, styles.headerSecondaryBtn]}

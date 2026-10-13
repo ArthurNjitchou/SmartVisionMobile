@@ -231,7 +231,7 @@ export default function ParentChildrenListScreen() {
               onPress={() => router.push('/(app)/(parent)/help' as any)}
             >
               <Ionicons name="person-add-outline" size={16} color="#FFF" />
-              <Text style={styles.helpBtnText}>Contacter l'administration</Text>
+              <Text style={styles.helpBtnText}>Contacter l&apos;administration</Text>
             </TouchableOpacity>
           </View>
         ) : (

@@ -135,7 +135,7 @@ export default function TeacherHomeScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Bonjour, {teacherName || 'Enseignant'} !</Text>
           <Text style={styles.subtitle}>
-            Voici un apercu de votre activite d'enseignement
+            Voici un apercu de votre activite d&apos;enseignement
           </Text>
         </View>
 

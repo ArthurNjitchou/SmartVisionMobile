@@ -4,6 +4,13 @@ import { authService } from '../services/auth.service';
 import { getLoginErrorMessage } from '../utils/authErrors';
 import { isAxiosError } from 'axios';
 import { authStorage, clearSessionStorageForLogout } from '../utils/storage';
+import { MOBILE_ROLES, SESSION_EXPIRED_MESSAGE, UNSUPPORTED_ROLE_MESSAGE } from '../constants/config';
+import { isJwtExpired } from '../utils/jwt';
+
+/** Seuls les parents et enseignants ont un espace dans l'application mobile. */
+function isMobileRole(role: string | undefined): boolean {
+  return (MOBILE_ROLES as readonly string[]).includes(role ?? '');
+}
 
 interface AuthState {
   user: User | null;
@@ -32,6 +39,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const response: AuthResponse = await authService.signIn(credentials);
+
+      // Identifiants valides mais rôle sans espace mobile (admin, élève…) : on ne garde
+      // pas la session et on explique pourquoi (les erreurs d'identifiants restent inchangées).
+      if (!isMobileRole(response.user?.role)) {
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: UNSUPPORTED_ROLE_MESSAGE,
+        });
+        return;
+      }
       
       // Sauvegarder le token et les données utilisateur
       await authStorage.setToken(response.token);
@@ -76,7 +96,27 @@ export const useAuthStore = create<AuthState>((set) => ({
       const token = await authStorage.getToken();
       const userData = await authStorage.getUserData();
 
-      if (token && userData) {
+      if (token && isJwtExpired(token)) {
+        // Session restaurée mais jeton expiré (7 jours) : on ne lance aucune requête,
+        // on renvoie directement au login avec une explication.
+        await authStorage.clearAuth();
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: SESSION_EXPIRED_MESSAGE,
+        });
+      } else if (token && userData && !isMobileRole(userData.role)) {
+        await authStorage.clearAuth();
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: UNSUPPORTED_ROLE_MESSAGE,
+        });
+      } else if (token && userData) {
         set({
           user: userData,
           token,
